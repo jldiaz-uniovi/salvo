@@ -2,6 +2,7 @@ from unittest.mock import patch
 import sys
 import io
 import pytest
+from aiohttp import FormData
 
 from salvo.util import raise_response_error
 from salvo.run import main
@@ -202,3 +203,47 @@ def test_data_not_callable():
         "2",
     )
     assert res["OK"] == 2, res
+
+
+def get_multipart_form(method, url, args):
+    """Returns a tuple (headers, data), where headers is a dictionary with headers
+    to be added to the molotov session, and data is the body to POST (or a valid
+    aiohttp Payload object, with an async .write() method)"""
+
+    data = FormData()
+    data.add_field(
+        "file", io.BytesIO(b"fake data\0"), filename="fake_file"
+    )  # file stream
+    data.add_field("example_field", "yes")  # Another field for the form
+    data()  # Process the form and generate the header and the Payload
+    return data._writer.headers, data._writer
+
+
+def get_multipart_form_bad(method, url, args):
+    return {"content-type": "multipart/form-data"}, b"bad body"
+
+
+def test_data_callable_multipart_form():
+    res = get_molotov_res(
+        "http://localhost:8888",
+        "-m",
+        "POST",
+        "-D",
+        "py:salvo.tests.test_run.get_multipart_form",
+        "-n",
+        "2",
+    )
+    assert res["OK"] == 2, res
+
+
+def test_data_callable_multipart_form_bad():
+    res = get_molotov_res(
+        "http://localhost:8888",
+        "-m",
+        "POST",
+        "-D",
+        "py:salvo.tests.test_run.get_multipart_form_bad",
+        "-n",
+        "2",
+    )
+    assert res["FAILED"] == 2, res

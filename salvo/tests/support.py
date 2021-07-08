@@ -65,6 +65,16 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         body = self.rfile.read(content_length)
+
+        # Check if the multipart-form contains the expected values
+        if "multipart" in self.headers["Content-Type"]:
+            if not all(
+                txt in body
+                for txt in [b"fake data", b"example_field", b"yes", b"fake_file"]
+            ):
+                # Generate exception if not. We do not return 400 code because that is considered OK by molotov
+                raise ValueError("Malformed multipart/form-data")
+
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()

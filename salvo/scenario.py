@@ -37,12 +37,16 @@ async def http_test(session):
     pre_hook = molotov.get_var("pre_hook")
     if pre_hook is not None:
         meth, url, options = pre_hook(meth, url, options)
-
     post_hook = molotov.get_var("post_hook")
     data = molotov.get_var("data")
     if data:
         if callable(data):
-            options["data"] = data(meth, url, options)
+            result = data(meth, url, options)
+            if type(result) == tuple:  # Deal with multipart/form-data
+                session.headers.update(result[0])
+                options["data"] = result[1]
+            else:
+                options["data"] = result
         else:
             options["data"] = data
 
