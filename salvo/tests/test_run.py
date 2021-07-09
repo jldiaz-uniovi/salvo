@@ -205,7 +205,7 @@ def test_data_not_callable():
     assert res["OK"] == 2, res
 
 
-def get_multipart_form(method, url, args):
+def get_multipart_form(method, url, opts):
     """Returns a tuple (headers, data), where headers is a dictionary with headers
     to be added to the molotov session, and data is the body to POST (or a valid
     aiohttp Payload object, with an async .write() method)"""
@@ -219,8 +219,26 @@ def get_multipart_form(method, url, args):
     return data._writer.headers, data._writer
 
 
-def get_multipart_form_bad(method, url, args):
+def get_multipart_form_bad(method, url, opts):
     return {"content-type": "multipart/form-data"}, b"bad body"
+
+
+def get_multipart_form_with_args(method, url, opts):
+    """Returns a tuple (headers, data), where headers is a dictionary with headers
+    to be added to the molotov session, and data is the body to POST (or a valid
+    aiohttp Payload object, with an async .write() method)"""
+
+    if not opts.get("data_args"):
+        raise ValueError("No data_args in opts")
+    args = dict(a.split(":") for a in opts.get("data_args").split())
+    data = FormData()
+    for k, v in args.items():
+        if k == "file":
+            data.add_field("file", io.BytesIO(b"fake data\0"), filename=v)
+        else:
+            data.add_field(k, v)
+    data()  # Process the form and generate the header and the Payload
+    return data._writer.headers, data._writer
 
 
 def test_data_callable_multipart_form():
@@ -237,7 +255,7 @@ def test_data_callable_multipart_form():
 
 
 def test_data_callable_multipart_form_bad():
-    res = get_molotov_res(
+    res = get_salvo_res(
         "http://localhost:8888",
         "-m",
         "POST",
@@ -246,4 +264,20 @@ def test_data_callable_multipart_form_bad():
         "-n",
         "2",
     )
-    assert res["FAILED"] == 2, res
+    assert len(res.status_code_counter[400]) == 2, res.status_code_counter
+
+
+def test_data_callable_arguments():
+    res = get_molotov_res(
+        "http://localhost:8888",
+        "-m",
+        "POST",
+        "-D",
+        "py:salvo.tests.test_run.get_multipart_form_with_args",
+        "-r",
+        "file:fake_file example_field:yes",
+        "-n",
+        "2",
+        "--json-output",
+    )
+    assert res["OK"] == 2, res

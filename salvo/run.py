@@ -89,7 +89,16 @@ def main():
         type=str,
         default=None,
     )
-
+    parser.add_argument(
+        "-r",
+        "--data-args",
+        help=(
+            "Data arguments. When --data points to a python callable"
+            " this string will be passed to the function as part of the options"
+        ),
+        type=str,
+        default=None,
+    )
     parser.add_argument("-c", "--concurrency", help="Concurrency", type=int, default=1)
 
     parser.add_argument(

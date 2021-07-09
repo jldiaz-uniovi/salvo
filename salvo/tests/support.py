@@ -68,12 +68,14 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # Check if the multipart-form contains the expected values
         if "multipart" in self.headers["Content-Type"]:
+            print("BODY:", body)
             if not all(
                 txt in body
                 for txt in [b"fake data", b"example_field", b"yes", b"fake_file"]
             ):
-                # Generate exception if not. We do not return 400 code because that is considered OK by molotov
-                raise ValueError("Malformed multipart/form-data")
+                self.send_response(400)
+                self.end_headers()
+                return
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
