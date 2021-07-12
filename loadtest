@@ -1,0 +1,6 @@
+PYTHONPATH=$(pwd) iodid http://156.35.151.156:5000/detect \
+  -m POST -D py:load_image.form \
+  --data-args "file:perro-robot.jpg model:s augment:true tipo:imagen" \
+  --statsd --statsd-address udp://127.0.0.1:9125 \
+  -c 1 -n 1 \
+  $*
