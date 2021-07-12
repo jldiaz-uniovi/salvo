@@ -2,9 +2,9 @@ import argparse
 import logging
 import sys
 
-from salvo import __version__
-from salvo.output import RunResults
-from salvo.util import get_server_info, print_server_info
+from iodid import __version__
+from iodid.output import RunResults
+from iodid.util import get_server_info, print_server_info
 
 
 logger = logging.getLogger("break")
@@ -38,7 +38,7 @@ def load(url, args, stream=sys.stdout):
 
     res = RunResults(server_info, num=num, duration=args.duration, quiet=args.quiet)
 
-    from salvo.scenario import run_test
+    from iodid.scenario import run_test
 
     try:
         molotov_res = run_test(url, res, args)
@@ -135,7 +135,7 @@ def main():
             "a request is done for example: "
             "eg. post_hook(response). "
             "It must return a given response parameter or "
-            "call `salvo.util.raise_response_error` for "
+            "call `iodid.util.raise_response_error` for "
             "a failed request."
         ),
         type=str,
@@ -155,6 +155,17 @@ def main():
         help="Don't display the progress bar",
         action="store_true",
         default=False,
+    )
+
+    parser.add_argument(
+        "--statsd", help="Activates statsd", action="store_true", default=False
+    )
+
+    parser.add_argument(
+        "--statsd-address",
+        help="Statsd Address",
+        type=str,
+        default="udp://127.0.0.1:8125",
     )
 
     group = parser.add_mutually_exclusive_group()

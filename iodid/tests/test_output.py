@@ -1,6 +1,6 @@
 import json
 import io
-from salvo.output import print_errors, RunResults
+from iodid.output import print_errors, RunResults
 
 
 def one_print(func, *args):

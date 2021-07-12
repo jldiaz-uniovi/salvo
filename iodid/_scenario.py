@@ -5,7 +5,7 @@ import base64
 from collections import namedtuple
 from aiohttp import ClientResponseError
 
-from salvo.util import resolve
+from iodid.util import resolve
 
 import molotov
 from molotov.run import run
@@ -68,7 +68,7 @@ async def http_test(session):
                 txt = await resp.read()
             res.incr(resp.status, time.time() - start)
     except ClientResponseError as exc:
-        print("EXCEPCION:", exc)
+        # print("EXCEPCION:", exc)
         res.incr(exc.status, time.time() - start)
         res.errors[exc.status] += 1
         if exc.message not in res.errors_desc:

@@ -5,7 +5,7 @@ import json
 import threading
 from collections import defaultdict, namedtuple
 
-from salvo.pgbar import AnimatedProgressBar
+from iodid.pgbar import AnimatedProgressBar
 
 
 RunStats = namedtuple(

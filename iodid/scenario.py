@@ -5,32 +5,33 @@ import base64
 from collections import namedtuple
 from aiohttp import ClientResponseError
 
-from salvo.util import resolve
+from iodid.util import resolve
 
 import molotov
 from molotov.run import run
 from molotov import util, api
 
 
-def run_test(url, results, salvoargs):
+def run_test(url, results, iodidargs):
     args = namedtuple("args", "")
     args.force_shutdown = False
     args.ramp_up = 0.0
-    args.verbose = salvoargs.verbose
-    args.quiet = salvoargs.quiet
+    args.verbose = iodidargs.verbose
+    args.quiet = iodidargs.quiet
     args.exception = False
     args.processes = 1
     args.debug = False
-    args.workers = salvoargs.concurrency
+    args.workers = iodidargs.concurrency
     args.console = True
-    args.statsd = False
+    args.statsd = iodidargs.statsd
+    args.statsd_address = iodidargs.statsd_address
     args.single_mode = None
-    if salvoargs.duration:
-        args.duration = salvoargs.duration
+    if iodidargs.duration:
+        args.duration = iodidargs.duration
         args.max_runs = None
     else:
         args.duration = 9999
-        args.max_runs = salvoargs.requests
+        args.max_runs = iodidargs.requests
     args.delay = 0.0
     args.sizing = False
     args.sizing_tolerance = 0.0
@@ -42,25 +43,25 @@ def run_test(url, results, salvoargs):
     args.disable_dns_resolve = False
     args.single_run = False
 
-    molotov.set_var("method", salvoargs.method)
+    molotov.set_var("method", iodidargs.method)
     molotov.set_var("url", url)
     molotov.set_var("results", results)
-    molotov.set_var("auth", salvoargs.auth)
-    molotov.set_var("content_type", salvoargs.content_type)
-    molotov.set_var("data_args", salvoargs.data_args)
+    molotov.set_var("auth", iodidargs.auth)
+    molotov.set_var("content_type", iodidargs.content_type)
+    molotov.set_var("data_args", iodidargs.data_args)
 
-    data = salvoargs.data
+    data = iodidargs.data
     if data and data.startswith("py:"):
         data = resolve(data.split(":")[1])
     molotov.set_var("data", data)
 
-    if salvoargs.pre_hook is not None:
-        molotov.set_var("pre_hook", resolve(salvoargs.pre_hook))
+    if iodidargs.pre_hook is not None:
+        molotov.set_var("pre_hook", resolve(iodidargs.pre_hook))
     else:
         molotov.set_var("pre_hook", None)
 
-    if salvoargs.post_hook is not None:
-        post_hook = resolve(salvoargs.post_hook)
+    if iodidargs.post_hook is not None:
+        post_hook = resolve(iodidargs.post_hook)
         if not asyncio.iscoroutinefunction(post_hook):
             raise Exception("The post hook needs to be a coroutine")
         molotov.set_var("post_hook", post_hook)

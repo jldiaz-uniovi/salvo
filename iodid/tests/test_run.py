@@ -4,10 +4,10 @@ import io
 import pytest
 from aiohttp import FormData
 
-from salvo.util import raise_response_error
-from salvo.run import main
-from salvo.tests.support import coserver, dedicatedloop
-from salvo import __version__
+from iodid.util import raise_response_error
+from iodid.run import main
+from iodid.tests.support import coserver, dedicatedloop
+from iodid import __version__
 
 
 @dedicatedloop
@@ -38,7 +38,7 @@ def assert_stdout(expected, *args):
     assert _test(*args)[1] == expected
 
 
-def get_salvo_res(*args):
+def get_iodid_res(*args):
     return _test(*args)[-2]
 
 
@@ -81,12 +81,12 @@ def test_duration():
 
 
 def test_errors():
-    res = get_salvo_res("http://localhost:8888/error", "-n", "2")
+    res = get_iodid_res("http://localhost:8888/error", "-n", "2")
     assert len(res.status_code_counter[500]) == 2, res
 
 
 def test_errors_json():
-    res = get_salvo_res("http://localhost:8888/error", "-n", "2", "--json")
+    res = get_iodid_res("http://localhost:8888/error", "-n", "2", "--json")
     assert len(res.status_code_counter[500]) == 2, res
 
 
@@ -112,9 +112,9 @@ def test_hooks():
         "-n",
         "10",
         "--pre-hook",
-        "salvo.tests.test_run.pre_hook",
+        "iodid.tests.test_run.pre_hook",
         "--post-hook",
-        "salvo.tests.test_run.post_hook",
+        "iodid.tests.test_run.post_hook",
         "--verbose",
     ]
     get_molotov_res(*testargs)
@@ -132,9 +132,9 @@ def test_post_hook_raise():
         "-n",
         "1",
         "--post-hook",
-        "salvo.tests.test_run.post_hook_raise",
+        "iodid.tests.test_run.post_hook_raise",
     ]
-    res = get_salvo_res(*testargs)
+    res = get_iodid_res(*testargs)
     assert len(res.status_code_counter[500]) == 1, res
 
 
@@ -148,7 +148,7 @@ def test_post_hook_fail():
         "-n",
         "10",
         "--post-hook",
-        "salvo.tests.test_run.hook_fail",
+        "iodid.tests.test_run.hook_fail",
     ]
     res = get_molotov_res(*testargs)
     assert res["FAILED"] == 10
@@ -164,7 +164,7 @@ def test_post_hook_not_async():
         "-n",
         "10",
         "--post-hook",
-        "salvo.tests.test_run.hook_sync",
+        "iodid.tests.test_run.hook_sync",
     ]
     with pytest.raises(Exception):
         get_molotov_res(*testargs)
@@ -185,7 +185,7 @@ def test_data_callable():
         "-m",
         "POST",
         "-D",
-        "py:salvo.tests.test_run.get_data",
+        "py:iodid.tests.test_run.get_data",
         "-n",
         "2",
     )
@@ -247,7 +247,7 @@ def test_data_callable_multipart_form():
         "-m",
         "POST",
         "-D",
-        "py:salvo.tests.test_run.get_multipart_form",
+        "py:iodid.tests.test_run.get_multipart_form",
         "-n",
         "2",
     )
@@ -255,12 +255,12 @@ def test_data_callable_multipart_form():
 
 
 def test_data_callable_multipart_form_bad():
-    res = get_salvo_res(
+    res = get_iodid_res(
         "http://localhost:8888",
         "-m",
         "POST",
         "-D",
-        "py:salvo.tests.test_run.get_multipart_form_bad",
+        "py:iodid.tests.test_run.get_multipart_form_bad",
         "-n",
         "2",
     )
@@ -273,7 +273,7 @@ def test_data_callable_arguments():
         "-m",
         "POST",
         "-D",
-        "py:salvo.tests.test_run.get_multipart_form_with_args",
+        "py:iodid.tests.test_run.get_multipart_form_with_args",
         "-r",
         "file:fake_file example_field:yes",
         "-n",

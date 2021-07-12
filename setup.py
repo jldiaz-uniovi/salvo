@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from salvo import __version__
+from iodid import __version__
 
 
 install_requires = ["molotov"]
@@ -20,9 +20,9 @@ classifiers = [
 ]
 
 setup(
-    name="salvo",
+    name="iodid",
     version=__version__,
-    url="https://github.com/tarekziade/salvo",
+    url="https://github.com/jldiaz/salvo",
     packages=find_packages(),
     long_description=description,
     description="Simple HTTP Load tester",
@@ -35,6 +35,6 @@ setup(
     test_suite="unittest.collector",
     entry_points="""
       [console_scripts]
-      salvo = salvo.run:console_main
+      iodid = iodid.run:console_main
       """,
 )

@@ -1,45 +1,32 @@
 =====
-Salvo
+iodid
 =====
 
-.. image:: http://coveralls.io/repos/github/tarekziade/salvo/badge.svg?branch=master
-   :target: https://coveralls.io/github/tarekziade/salvo?branch=master
+This is heavily based on https://github.com/tarekziade/salvo, slightly adapted to fit my own needs. 
+The most important modifications are aimed at:
 
-.. image:: http://travis-ci.org/tarekziade/salvo.svg?branch=master
-   :target: https://travis-ci.org/tarekziade/salvo
-
-
-
-This is the replacement for https://github.com/tarekziade/boom
-
-**Salvo** is a simple command line tool to send some load to an HTTP(S)
-endpoint.
-
-Salvo is a script you can use to quickly smoke-test your
-web app deployment. If you need a more complex tool,
-I'd suggest looking at `Molotov <http://molotov.readthedocs.io>`_
-
-Salvo was specifically written to replace my Apache Bench (ab) usage.
-Salvo is based on Molotov, which uses Python 3 asyncio & aiohttp.
-
+* Injecting a load given as a series of rps
+* Allowing the use of multipart/form-data (eg: uploading files) as part of POST requests
 
 Installation
 ============
 
-Salvo requires Python 3.6+ and **Molotov**, which gets installed as a
+iodid requires Python 3.6+ and **Molotov**, which gets installed as a
 dependency.
 
-Just do::
+Just clone this respository and do::
 
-    $ pip install salvo
+    $ pip install .
 
 
 Basic usage
 ===========
 
+(TODO: Document the new features, what follows is simply taken from salvo README)
+
 Basic usage example: 100 queries with a maximum concurrency of 10 users::
 
-    % salvo http://localhost:80 -c 10 -n 100
+    % iodid http://localhost:80 -c 10 -n 100
     -------- Server info --------
 
     Server Software: nginx/1.18.0
@@ -67,16 +54,4 @@ Basic usage example: 100 queries with a maximum concurrency of 10 users::
 
 You can also use `--duration` if you want to run for a given amount of time.
 
-For a full list of features, run `salvo --help`
-
-
-Contribute
-==========
-
-Salvo is very simple and anyone familiar with Python can contribute.
-
-If you are interested in this project, you are welcome to join the fun at
-https://github.com/tarekziade/salvo
-
-Make sure to add yourself to the contributors list if your PR gets merged. And
-make sure it's in alphabetical order!
+For a full list of features, run `iodid --help`
