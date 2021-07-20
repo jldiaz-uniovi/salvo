@@ -1,0 +1,20 @@
+# Example trace file
+# Lines starting with #, and empty lines, are ignored
+1
+2
+3
+4
+5
+10
+1
+1
+1
+# A line with the content "# ENDTRACE" causes the rest of the file being ignored
+# ENDTRACE
+5
+5
+5
+5
+# Lines wich are not parseable as integers are skipped, but they trigger a warning
+Hoola
+
