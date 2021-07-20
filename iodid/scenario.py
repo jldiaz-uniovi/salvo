@@ -4,12 +4,19 @@ import time
 import base64
 from collections import namedtuple
 from aiohttp import ClientResponseError
+from copy import copy
+import threading
+import os
 
 from iodid.util import resolve
+from iodid.output import RunResults
 
 import molotov
 from molotov.run import run
+from molotov.runner import Runner
 from molotov import util, api
+from molotov.stats import get_statsd_client
+from aiodogstatsd import Client
 
 
 def run_test(url, results, iodidargs):
@@ -95,3 +102,74 @@ def run_test(url, results, iodidargs):
         print("".join(stream.buffer))
 
     return res
+
+
+def monkeypatched_launch_processes(self):
+    args = self.args
+    args.original_pid = os.getpid()
+    self._process()
+    return self._results
+
+
+Runner._launch_processes = monkeypatched_launch_processes
+
+
+class WorkloadTest:
+    def __init__(self, url, workload, time_unit, args):
+        self.url = url
+        self.workload = workload
+        self.time_unit = time_unit
+        self.args = copy(args)
+        self.res = []
+        self.threads = []
+        if self.args.statsd:
+            self.statsd = get_statsd_client(self.args.statsd_address)
+            self.lock = threading.Lock()
+            self.num_threads = 0
+        else:
+            self.statsd = None
+
+    def run(self):
+        self.thread = threading.Thread(target=self.periodic)
+        self.thread.daemon = False
+        self.thread.start()
+        self.thread.join()
+        for thread in self.threads:
+            thread.join()
+        return self.res
+
+    async def update_statsd_numthreads(self, increment=True):
+        if not self.statsd:
+            return
+        with self.lock:
+            if increment:
+                self.num_threads += 1
+            else:
+                self.num_threads -= 1
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        async with self.statsd as f:
+            f.gauge("iodid_num_threads", value=self.num_threads)
+
+    def inject_workload(self, t, wl):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.update_statsd_numthreads(increment=True))
+        self.args.concurrency = wl
+        self.args.requests = 1
+        res = RunResults(quiet=True)
+        molores = run_test(self.url, res, self.args)
+        print(f"[{t}] Resultados molotov: {molores}")
+        print(f"[{t}] Estadísticas recopiladas: {res.get_json()}")
+        self.res.append(res)
+        loop.run_until_complete(self.update_statsd_numthreads(increment=False))
+
+    def periodic(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        for t, wl in enumerate(self.workload):
+            print(f"Timeslot {t}. Workload {wl}")
+            thread = threading.Thread(target=self.inject_workload, args=(t, wl))
+            self.threads.append(thread)
+            thread.start()
+            time.sleep(self.time_unit)

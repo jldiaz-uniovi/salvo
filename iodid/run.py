@@ -5,7 +5,7 @@ import sys
 from iodid import __version__
 from iodid.output import RunResults
 from iodid.util import get_server_info, print_server_info
-
+from iodid.trace import InMemoryTrace
 
 logger = logging.getLogger("break")
 _VERBS = ("GET", "POST", "DELETE", "PUT", "HEAD", "OPTIONS")
@@ -51,9 +51,49 @@ def load(url, args, stream=sys.stdout):
     return res, molotov_res
 
 
+def load_trace(url, trace, time_unit, args, stream=sys.stdout):
+    workload = InMemoryTrace(trace)
+    if not args.quiet:
+        print(_H + f" Injecting workload for {len(workload.trace)} timeslots" + _H)
+    from iodid.scenario import WorkloadTest
+
+    try:
+        loader = WorkloadTest(url, workload, time_unit, args)
+        res = loader.run()
+    except SystemExit as e:
+        raise Exception(f"Molotov exit {e.code}")
+    finally:
+        if not args.quiet:
+            print(_H + "TraceTest results" + _H)
+            for t, stats in enumerate(res):
+                j = stats.get_json()
+                print(f"t={t}, wl={j['count']}, rt={j['avg']}, rpm={j['rpm']},")
+                print(f"       counters={show_counters(stats.status_code_counter)}")
+            print("")
+
+    return res, None
+
+
+def show_counters(counters, max_counters=8):
+    def fmt(l, delim):
+        return delim[0] + ", ".join(l) + delim[1]
+
+    res = []
+    for k, v in counters.items():
+        if len(v) < max_counters:
+            l = fmt((f"{value:.2f}" for value in v), "[]")
+        else:
+            l = [f"{value:.2f}" for value in v[: max_counters // 2]]
+            l += ["..."]
+            l += [f"{value:.2f}" for value in v[-max_counters // 2 :]]
+            l = fmt(l, "[]")
+        res.append(f"{k}: {l}")
+    return fmt(res, "{}")
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Simple HTTP Load runner based on Molotov."
+        description="Simple HTTP Load runner and trace injector based on Molotov."
     )
 
     parser.add_argument(
@@ -168,6 +208,21 @@ def main():
         default="udp://127.0.0.1:8125",
     )
 
+    parser.add_argument(
+        "-t",
+        "--trace",
+        help="File with number of request to inject per time unit",
+        type=str,
+        default=None,
+    )
+
+    parser.add_argument(
+        "-u",
+        "--time-unit",
+        help="Time unit for the trace, in seconds (default 1)",
+        type=int,
+        default=1,
+    )
     group = parser.add_mutually_exclusive_group()
 
     group.add_argument(
@@ -216,6 +271,10 @@ def main():
         headers = dict([_split(header) for header in args.header])
 
     args.headers = headers
+
+    if args.trace:
+        res, molotov_res = load_trace(args.url, args.trace, args.time_unit, args)
+        return res, molotov_res
 
     res, molotov_res = load(args.url, args)
     if molotov_res["SETUP_FAILED"] > 0 or molotov_res["SESSION_SETUP_FAILED"] > 0:
