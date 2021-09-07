@@ -65,9 +65,9 @@ def load_trace(url, trace, time_unit, args, stream=sys.stdout):
     finally:
         if not args.quiet:
             print(_H + "TraceTest results" + _H)
-            for t, stats in enumerate(res):
+            for t, wl, stats in res:
                 j = stats.get_json()
-                print(f"t={t}, wl={j['count']}, rt={j['avg']}, rpm={j['rpm']},")
+                print(f"t={t}, wl={wl}, rt={j['avg']}, rpm={j['rpm']},")
                 print(f"       counters={show_counters(stats.status_code_counter)}")
             print("")
 
@@ -214,6 +214,19 @@ def main():
         help="File with number of request to inject per time unit",
         type=str,
         default=None,
+    )
+
+    parser.add_argument(
+        "-e",
+        "--evenly-fraction",
+        help=(
+            "Distribute the requests evenly in the first fraction "
+            "of the timeslot. Eg, 0 means all request happen at "
+            "the start of the timeslot, 1 means all requests are "
+            "spread evenly through the timeslot (default=0)"
+        ),
+        type=float,
+        default=0.0,
     )
 
     parser.add_argument(

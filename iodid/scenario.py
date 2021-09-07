@@ -19,10 +19,12 @@ from molotov.stats import get_statsd_client
 from aiodogstatsd import Client
 
 
-def run_test(url, results, iodidargs):
+def run_test(url, results, iodidargs, loop=None):
     args = namedtuple("args", "")
     args.force_shutdown = False
     args.ramp_up = 0.0
+    if iodidargs.trace:
+        args.ramp_up = iodidargs.time_unit*iodidargs.evenly_fraction
     args.verbose = iodidargs.verbose
     args.quiet = iodidargs.quiet
     args.exception = False
@@ -95,7 +97,8 @@ def run_test(url, results, iodidargs):
     api._FIXTURES.clear()
 
     stream = Stream()
-    res = run(args, stream=stream)
+    # print(f"RUN_TEST---> loop={id(loop)}")
+    res = run(args, stream=stream, loop=loop)
 
     if res["SETUP_FAILED"] > 0 or res["SESSION_SETUP_FAILED"] > 0:
         print("Setup failed. read the Molotov session below to get the error")
@@ -103,6 +106,7 @@ def run_test(url, results, iodidargs):
 
     return res
 
+# Monkeypatching
 
 def monkeypatched_launch_processes(self):
     args = self.args
@@ -110,8 +114,10 @@ def monkeypatched_launch_processes(self):
     self._process()
     return self._results
 
-
 Runner._launch_processes = monkeypatched_launch_processes
+
+# from molotov.util import cancellable_sleep
+# cancellable_sleep.cancel_all = lambda: 0
 
 
 class WorkloadTest:
@@ -139,34 +145,41 @@ class WorkloadTest:
         return self.res
 
     async def update_statsd_numthreads(self, increment=True):
-        if not self.statsd:
-            return
         with self.lock:
             if increment:
                 self.num_threads += 1
             else:
                 self.num_threads -= 1
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         async with self.statsd as f:
             f.gauge("iodid_num_threads", value=self.num_threads)
 
     def inject_workload(self, t, wl):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.update_statsd_numthreads(increment=True))
+        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} starts")
+        if self.statsd:
+            asyncio.run(self.update_statsd_numthreads(increment=True))
         self.args.concurrency = wl
         self.args.requests = 1
         res = RunResults(quiet=True)
-        molores = run_test(self.url, res, self.args)
-        print(f"[{t}] Resultados molotov: {molores}")
-        print(f"[{t}] Estadísticas recopiladas: {res.get_json()}")
-        self.res.append(res)
-        loop.run_until_complete(self.update_statsd_numthreads(increment=False))
-
-    def periodic(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        molores = run_test(self.url, res, self.args, loop)
+        # print(f"[{t}] Resultados molotov: {molores}")
+        print(f"[{t}] Estadísticas recopiladas: {res.get_json()}")
+        # print("\t".join(str(x) for x in res.get_json().values()), file=sys.stderr)
+        self.res.append((t, wl, res))
+        if self.statsd:
+            asyncio.run(self.update_statsd_numthreads(increment=False))
+        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} ends")
+
+    # def inject_workload(self, t, wl):
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
+        # loop.run_until_complete(self.inject_async(t, wl))
+        # self.inject_async(t, wl, loop)
+
+    def periodic(self):
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
         for t, wl in enumerate(self.workload):
             print(f"Timeslot {t}. Workload {wl}")
             thread = threading.Thread(target=self.inject_workload, args=(t, wl))

@@ -1,7 +1,17 @@
 # Example trace file
 # Lines starting with #, and empty lines, are ignored
-1
-2
+200
+200
+200
+500
+100
+100
+100
+
+# ENDTRACE
+
+
+
 3
 4
 5
@@ -15,6 +25,6 @@
 5
 5
 5
-# Lines wich are not parseable as integers are skipped, but they trigger a warning
+# Lines which are not parseable as integers are skipped, but they trigger a warning
 Hoola
 
