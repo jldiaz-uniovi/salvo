@@ -78,13 +78,13 @@ Iodid will run a loop in which each N seconds:
   to be performed in the next timeslot.
 * A new thread is started. Within this thread:
 
-  * M requests are run concurrently (the client implements asyncronously this part
+  * M requests are run concurrently (the client implements asynchronously this part
     so all requests are run in the same thread). All requests will be GET requests
     by default, unless ``-m`` option is used to specify another kind of request
     (see next section)
   * When all M requests are terminated, the thread ends
 
-Note that if the M requests cannot be served within the N seconcs alloted to the timeslot,
+Note that if the M requests cannot be served within the N seconds allotted to the timeslot,
 the thread for the next timeslot will be added to the one still running for the previous
 timeslot. If the server cannot respond quick enough, the threads can pile up in the client.
 It is advised to perform previously a stress test to check how many request can the server
@@ -92,12 +92,12 @@ handle in a timeslot.
 
 Option ``-e`` can influence the shape of the load received by the server. The default
 value (0.0) causes all M requests for the timeslot to be sent at the beginning of the
-timeslot. This will cause puntual and repetitive spikes in the server, which are not 
+timeslot. This will cause punctual and repetitive spikes in the server, which are not
 very realistic. If ``-e 1.0`` is used instead, the M requests are evenly spaced within the
 N seconds of the timeslot. This is more realistic, but it will cause some request to be
 launched just at the end of the timeslot, which will overlap with the ones in the next
 timeslot. You can aso give other values such as ``-e 0.8`` which will cause that all the
-M requests of the timeslot will be launched at reqular spaces within the first 0.8*N seconds
+M requests of the timeslot will be launched at regular spaces within the first 0.8*N seconds
 of the timeslot. This will leave some time at the end of the timeslot to process the 
 pending requests before starting a new timeslot.
 
