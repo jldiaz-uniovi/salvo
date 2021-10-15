@@ -154,7 +154,7 @@ class WorkloadTest:
             f.gauge("iodid_num_threads", value=self.num_threads)
 
     def inject_workload(self, t, wl):
-        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} starts")
+        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} starts)")
         if self.statsd:
             asyncio.run(self.update_statsd_numthreads(increment=True))
         self.args.concurrency = wl
@@ -169,7 +169,7 @@ class WorkloadTest:
         self.res.append((t, wl, res))
         if self.statsd:
             asyncio.run(self.update_statsd_numthreads(increment=False))
-        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} ends")
+        print(f"inject_workload(t={t}, wl={wl}),  (tid={threading.get_ident()} ends)")
 
     # def inject_workload(self, t, wl):
         # loop = asyncio.new_event_loop()
